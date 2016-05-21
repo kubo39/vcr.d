@@ -1,7 +1,7 @@
 module vcr;
 
 
-enum VG_USERREQ
+enum VG_USERREQ : uint
 {
     RUNNING_ON_VALGRIND  = 0x1001,
     DISCARD_TRANSLATIONS = 0x1002,
@@ -78,14 +78,13 @@ enum VG_USERREQ
 
 version(D_InlineAsm_X86_64)
 {
-    ulong valgrindClientRequest(ulong flag, uint[6] args)
+    ulong valgrindClientRequest(ulong flag, ref uint[6] args)
     {
         ulong result= void;
-        auto _args = args.dup.ptr;
         asm
         {
             mov RDX, flag[RBP];
-            mov RAX, _args;
+            mov RAX, args;
             rol RDI, 0x3;
             rol RDI, 0xd;
             rol RDI, 0x3d;
@@ -102,7 +101,8 @@ else static assert(false, "Unsupported arch.");
 
 ulong runningOnValgrind()
 {
-    return valgrindClientRequest(0, [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0]);
+    uint[6] arr = [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
+    return valgrindClientRequest(0, arr);
 }
 
 
