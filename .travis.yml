@@ -1,0 +1,13 @@
+language: d
+
+d:
+  - dmd
+  - gdc
+  - ldc
+
+install:
+  - sudo apt-get update
+  - sudo apt-get install valgrind
+
+script:
+  - $(DC) -unittest -main -of./target/test source/vcr.d && valgrind --tool=none ./target/test
