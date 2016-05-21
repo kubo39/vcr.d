@@ -1,7 +1,7 @@
 {
-	"name": "vcr.d",
-	"description": "Valgrind cleint requests for D.",
-	"authors": ["kubo39"],
+    "name": "vcr.d",
+    "description": "Valgrind cleint requests for D.",
+    "authors": ["kubo39"],
     "targetType": "library",
     "targetPath": "build",
     "license": "MIT"
