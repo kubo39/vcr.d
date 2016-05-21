@@ -76,23 +76,28 @@ enum VG_USERREQ
 }
 
 
-ulong valgrindClientRequest(ulong flag, uint[6] args)
+version(D_InlineAsm_X86_64)
 {
-    ulong result= void;
-    auto x = args.dup.ptr;
-    asm
+    ulong valgrindClientRequest(ulong flag, uint[6] args)
     {
-        mov RDX, flag[RBP];
-        mov RAX, x;
-        rol RDI, 0x3;
-        rol RDI, 0xd;
-        rol RDI, 0x3d;
-        rol RDI, 0x33;
-        xchg RBX, RBX;
-        mov result, RDX;
+        ulong result= void;
+        auto _args = args.dup.ptr;
+        asm
+        {
+            mov RDX, flag[RBP];
+            mov RAX, _args;
+            rol RDI, 0x3;
+            rol RDI, 0xd;
+            rol RDI, 0x3d;
+            rol RDI, 0x33;
+            xchg RBX, RBX;
+            mov result, RDX;
+        }
+        return result;
     }
-    return result;
 }
+else static assert(false, "Unsupported arch.");
+
 
 
 ulong running_on_valgrind()
