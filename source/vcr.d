@@ -100,7 +100,7 @@ else static assert(false, "Unsupported arch.");
 
 
 
-ulong running_on_valgrind()
+ulong runningOnValgrind()
 {
     return valgrindClientRequest(0, [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0]);
 }
@@ -108,5 +108,5 @@ ulong running_on_valgrind()
 
 unittest
 {
-    assert(running_on_valgrind() == 1);
+    assert(runningOnValgrind() == 1);
 }
