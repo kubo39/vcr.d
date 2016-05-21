@@ -2,8 +2,6 @@ language: d
 
 d:
   - dmd
-  - gdc
-  - ldc
 
 install:
   - sudo apt-get update
