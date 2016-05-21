@@ -80,7 +80,7 @@ version(D_InlineAsm_X86_64)
 {
     ulong valgrindClientRequest(ulong flag, ref ulong[6] args)
     {
-        ulong result= void;
+        ulong result = void;
         asm
         {
             mov RDX, flag[RBP];
@@ -102,6 +102,13 @@ else static assert(false, "Unsupported arch.");
 ulong runningOnValgrind()
 {
     ulong[6] arr = [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
+    return valgrindClientRequest(0, arr);
+}
+
+
+ulong countErrors()
+{
+    ulong[6] arr = [VG_USERREQ.COUNT_ERRORS, 0, 0, 0, 0, 0];
     return valgrindClientRequest(0, arr);
 }
 
