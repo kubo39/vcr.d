@@ -1,6 +1,6 @@
 {
-	"name": "example",
-	"authors": ["kubo39"],
+    "name": "example",
+    "authors": ["kubo39"],
     "targetType": "executable",
     "dependencies": {
         "vcr.d": {"version": "~master", "path": "../"}
