@@ -1,6 +1,12 @@
+/**
+ *  Valgrind client request for D.
+ *    ref: http://valgrind.org/docs/manual/manual-core-adv.html#manual-core-adv.clientreq
+ */
 module vcr;
 
 
+
+/// from valgrind/valgrind.h.
 enum VG_USERREQ : ulong
 {
     RUNNING_ON_VALGRIND  = 0x1001,
