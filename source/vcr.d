@@ -83,7 +83,7 @@ enum VG_USERREQ
 
 version(D_InlineAsm_X86_64)
 {
-    size_t valgrindClientRequest(size_t flag, ref size_t[6] args)
+    size_t doClientRequest(size_t flag, ref size_t[6] args)
     {
         size_t result = void;
         asm
@@ -107,14 +107,14 @@ else static assert(false, "Unsupported arch.");
 size_t runningOnValgrind()
 {
     size_t[6] arr = [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
-    return valgrindClientRequest(0, arr);
+    return doClientRequest(0, arr);
 }
 
 
 size_t countErrors()
 {
     size_t[6] arr = [VG_USERREQ.COUNT_ERRORS, 0, 0, 0, 0, 0];
-    return valgrindClientRequest(0, arr);
+    return doClientRequest(0, arr);
 }
 
 
@@ -124,7 +124,7 @@ size_t stackRegister(const void* start, const void* end)
                      cast(size_t) start,
                      cast(size_t) end,
                      0, 0, 0];
-    return valgrindClientRequest(0, arr);
+    return doClientRequest(0, arr);
 }
 
 
@@ -135,7 +135,7 @@ size_t stackChange(size_t id, const void* start, const void* end)
                      cast(size_t) start,
                      cast(size_t) end,
                      0, 0];
-    return valgrindClientRequest(0, arr);
+    return doClientRequest(0, arr);
 }
 
 
@@ -144,7 +144,7 @@ void stackDeregister(size_t id)
     size_t[6] arr = [VG_USERREQ.STACK_DEREGISTER,
                      id,
                      0, 0, 0, 0];
-    valgrindClientRequest(0, arr);
+    doClientRequest(0, arr);
 }
 
 
@@ -153,7 +153,7 @@ size_t discardTranslation(const void* addr, size_t len)
     size_t[6] arr = [VG_USERREQ.DISCARD_TRANSLATIONS,
                      cast(size_t) addr, len,
                      0, 0, 0];
-    return valgrindClientRequest(0, arr);
+    return doClientRequest(0, arr);
 }
 
 
