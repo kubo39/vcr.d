@@ -118,6 +118,45 @@ size_t countErrors()
 }
 
 
+size_t stackRegister(const void* start, const void* end)
+{
+    size_t[6] arr = [VG_USERREQ.STACK_REGISTER,
+                     cast(size_t) start,
+                     cast(size_t) end,
+                     0, 0, 0];
+    return valgrindClientRequest(0, arr);
+}
+
+
+size_t stackChange(size_t id, const void* start, const void* end)
+{
+    size_t[6] arr = [VG_USERREQ.STACK_CHANGE,
+                     id,
+                     cast(size_t) start,
+                     cast(size_t) end,
+                     0, 0];
+    return valgrindClientRequest(0, arr);
+}
+
+
+void stackDeregister(size_t id)
+{
+    size_t[6] arr = [VG_USERREQ.STACK_DEREGISTER,
+                     id,
+                     0, 0, 0, 0];
+    valgrindClientRequest(0, arr);
+}
+
+
+size_t discardTranslation(const void* addr, size_t len)
+{
+    size_t[6] arr = [VG_USERREQ.DISCARD_TRANSLATIONS,
+                     cast(size_t) addr, len,
+                     0, 0, 0];
+    return valgrindClientRequest(0, arr);
+}
+
+
 unittest
 {
     assert(runningOnValgrind() == 1);
