@@ -100,6 +100,25 @@ version(D_InlineAsm_X86_64)
         return result;
     }
 }
+else version(D_InlineAsm_X86)
+{
+    size_t doClientRequest(size_t flag, ref size_t[6] args)
+    {
+        size_t result = void;
+        asm
+        {
+            mov EAX, args[EBP];
+            mov EDX, flag;
+            rol EDI, 0x3;
+            rol EDI, 0xd;
+            rol EDI, 0x1d;
+            rol EDI, 0x13;
+            xchg EBX, EBX;
+            mov result, EDX;
+        }
+        return result;
+    }
+}
 else static assert(false, "Unsupported arch.");
 
 
