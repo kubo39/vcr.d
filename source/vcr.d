@@ -328,6 +328,111 @@ size_t stopInstrumentation()
 }
 
 
+/**
+ *  Client requests for memcheck.
+ */
+
+size_t makeMemNoaccess(const void* addr, size_t len)
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_NOACCESS,
+                     cast(size_t) addr, len, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t makeMemUndefined(const void* addr, size_t len)
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_UNDEFINED,
+                     cast(size_t) addr, len, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t makeMemDefined(const void* addr, size_t len)
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_DEFINED,
+                     cast(size_t) addr, len, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t makeMemDefinedIfAddressable(const void* addr, size_t len)
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_DEFINED_IF_ADDRESSABLE,
+                     cast(size_t) addr, len, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t doLeakCheck()
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
+                     0, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t doAddedLeakCheck()
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
+                     0, 1, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t doChangedLeakCheck()
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
+                     0, 2, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t doQuicLeakCheck()
+{
+    size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
+                     1, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+private struct LeakCount
+{
+    size_t leaked;
+    size_t dubious;
+    size_t reachable;
+    size_t suppressed;
+}
+
+
+LeakCount countLeaks()
+{
+    auto counts = LeakCount(0, 0, 0, 0);
+    size_t[6] arr = [Vg_MemCheckClientRequest.COUNT_LEAKS,
+                     cast(size_t) &counts.leaked,
+                     cast(size_t) &counts.dubious,
+                     cast(size_t) &counts.reachable,
+                     cast(size_t) &counts.suppressed,
+                     0];
+    doClientRequest(0, arr);
+    return counts;
+}
+
+
+LeakCount countLeakBlocks()
+{
+    auto counts = LeakCount(0, 0, 0, 0);
+    size_t[6] arr = [Vg_MemCheckClientRequest.COUNT_LEAK_BLOCKS,
+                     cast(size_t) &counts.leaked,
+                     cast(size_t) &counts.dubious,
+                     cast(size_t) &counts.reachable,
+                     cast(size_t) &counts.suppressed,
+                     0];
+    doClientRequest(0, arr);
+    return counts;
+}
+
+
 unittest
 {
     assert(runningOnValgrind() == 1);
