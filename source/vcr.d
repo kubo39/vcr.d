@@ -492,6 +492,26 @@ LeakCount countLeakBlocks()
 }
 
 
+/**
+ *  Client requests for helgrind.
+ */
+
+
+/* Clean memory state.  This makes Helgrind forget everything it knew
+   about the specified memory range.  Effectively this announces that
+   the specified memory range now "belongs" to the calling thread, so
+   that: (1) the calling thread can access it safely without
+   synchronisation, and (2) all other threads must sync with this one
+   to access it safely.  This is particularly useful for memory
+   allocators that wish to recycle memory. */
+size_t cleanMemory(const void* start, size_t len)
+{
+    size_t[6] arr = [Vg_TCheckClientRequest.HG_CLEAN_MEMORY,
+                     cast(size_t) start, len, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
 unittest
 {
     assert(runningOnValgrind() == 1);
