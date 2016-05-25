@@ -5,8 +5,14 @@
 module vcr;
 
 
+private int vg_userreq_tool_base(char a, char b) pure @nogc
+{
+    return (a & 0xff) << 24 | (b & 0xff) << 16;
+}
+
+
 /// from valgrind/valgrind.h.
-enum VG_USERREQ
+enum Vg_ClientRequest
 {
     RUNNING_ON_VALGRIND  = 0x1001,
     DISCARD_TRANSLATIONS = 0x1002,
@@ -81,6 +87,97 @@ enum VG_USERREQ
 }
 
 
+//from valgrind/callgrind.h
+enum Vg_CallgrindClientRequest
+{
+    DUMP_STATS = vg_userreq_tool_base('C','T'),
+    ZERO_STATS,
+    TOGGLE_COLLECT,
+    DUMP_STATS_AT,
+    START_INSTRUMENTATION,
+    STOP_INSTRUMENTATION
+}
+
+
+// from valgrind/memcheck.h
+enum Vg_MemCheckClientRequest
+{
+    MAKE_MEM_NOACCESS = vg_userreq_tool_base('M','C'),
+    MAKE_MEM_UNDEFINED,
+    MAKE_MEM_DEFINED,
+    DISCARD,
+    CHECK_MEM_IS_ADDRESSABLE,
+    CHECK_MEM_IS_DEFINED,
+    DO_LEAK_CHECK,
+    COUNT_LEAKS,
+    GET_VBITS,
+    SET_VBITS,
+    CREATE_BLOCK,
+    MAKE_MEM_DEFINED_IF_ADDRESSABLE,
+
+    /* Not next to VG_USERREQ__COUNT_LEAKS because it was added later. */
+    COUNT_LEAK_BLOCKS,
+
+    ENABLE_ADDR_ERROR_REPORTING_IN_RANGE,
+    DISABLE_ADDR_ERROR_REPORTING_IN_RANGE,
+
+    /* This is just for memcheck's internal use - don't use it */
+    _MEMCHECK_RECORD_OVERLAP_ERROR = vg_userreq_tool_base('M','C') + 256
+}
+
+
+// from valgrind/helgrind.h
+enum Vg_TCheckClientRequest
+{
+    HG_CLEAN_MEMORY = vg_userreq_tool_base('H','G')
+}
+
+
+// from valgrind/drd.h
+enum Vg_DRDClientRequest
+{
+   /* Ask the DRD tool to discard all information about memory accesses   */
+   /* and client objects for the specified range. This client request is  */
+   /* binary compatible with the similarly named Helgrind client request. */
+   DRD_CLEAN_MEMORY = vg_userreq_tool_base('H','G'),
+   /* args: Addr, SizeT. */
+
+   /* Ask the DRD tool the thread ID assigned by Valgrind. */
+   DRD_GET_VALGRIND_THREAD_ID = vg_userreq_tool_base('D','R'),
+   /* args: none. */
+   /* Ask the DRD tool the thread ID assigned by DRD. */
+   DRD_GET_DRD_THREAD_ID,
+   /* args: none. */
+
+   /* To tell the DRD tool to suppress data race detection on the */
+   /* specified address range. */
+   DRD_START_SUPPRESSION,
+   /* args: start address, size in bytes */
+   /* To tell the DRD tool no longer to suppress data race detection on */
+   /* the specified address range. */
+   DRD_FINISH_SUPPRESSION,
+   /* args: start address, size in bytes */
+
+   /* To ask the DRD tool to trace all accesses to the specified range. */
+   DRD_START_TRACE_ADDR,
+   /* args: Addr, SizeT. */
+   /* To ask the DRD tool to stop tracing accesses to the specified range. */
+   DRD_STOP_TRACE_ADDR,
+   /* args: Addr, SizeT. */
+
+   /* Tell DRD whether or not to record memory loads in the calling thread. */
+   DRD_RECORD_LOADS,
+   /* args: Bool. */
+   /* Tell DRD whether or not to record memory stores in the calling thread. */
+   DRD_RECORD_STORES,
+   /* args: Bool. */
+
+   /* Set the name of the thread that performs this client request. */
+   DRD_SET_THREAD_NAME,
+   /* args: null-terminated character string. */
+}
+
+
 version(D_InlineAsm_X86_64)
 {
     size_t doClientRequest(size_t flag, ref size_t[6] args)
@@ -123,23 +220,27 @@ else static assert(false, "Unsupported arch.");
 
 
 
+/**
+ *  Client request for valgdind core.
+ */
+
 size_t runningOnValgrind()
 {
-    size_t[6] arr = [VG_USERREQ.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
+    size_t[6] arr = [Vg_ClientRequest.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
     return doClientRequest(0, arr);
 }
 
 
 size_t countErrors()
 {
-    size_t[6] arr = [VG_USERREQ.COUNT_ERRORS, 0, 0, 0, 0, 0];
+    size_t[6] arr = [Vg_ClientRequest.COUNT_ERRORS, 0, 0, 0, 0, 0];
     return doClientRequest(0, arr);
 }
 
 
 size_t stackRegister(const void* start, const void* end)
 {
-    size_t[6] arr = [VG_USERREQ.STACK_REGISTER,
+    size_t[6] arr = [Vg_ClientRequest.STACK_REGISTER,
                      cast(size_t) start,
                      cast(size_t) end,
                      0, 0, 0];
@@ -149,7 +250,7 @@ size_t stackRegister(const void* start, const void* end)
 
 size_t stackChange(size_t id, const void* start, const void* end)
 {
-    size_t[6] arr = [VG_USERREQ.STACK_CHANGE,
+    size_t[6] arr = [Vg_ClientRequest.STACK_CHANGE,
                      id,
                      cast(size_t) start,
                      cast(size_t) end,
@@ -160,7 +261,7 @@ size_t stackChange(size_t id, const void* start, const void* end)
 
 void stackDeregister(size_t id)
 {
-    size_t[6] arr = [VG_USERREQ.STACK_DEREGISTER,
+    size_t[6] arr = [Vg_ClientRequest.STACK_DEREGISTER,
                      id,
                      0, 0, 0, 0];
     doClientRequest(0, arr);
@@ -169,7 +270,7 @@ void stackDeregister(size_t id)
 
 size_t discardTranslation(const void* addr, size_t len)
 {
-    size_t[6] arr = [VG_USERREQ.DISCARD_TRANSLATIONS,
+    size_t[6] arr = [Vg_ClientRequest.DISCARD_TRANSLATIONS,
                      cast(size_t) addr, len,
                      0, 0, 0];
     return doClientRequest(0, arr);
