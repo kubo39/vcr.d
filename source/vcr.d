@@ -221,7 +221,7 @@ else static assert(false, "Unsupported arch.");
 
 
 /**
- *  Client request for valgdind core.
+ *  Client requests for valgrind core.
  */
 
 size_t runningOnValgrind()
@@ -273,6 +273,57 @@ size_t discardTranslation(const void* addr, size_t len)
     size_t[6] arr = [Vg_ClientRequest.DISCARD_TRANSLATIONS,
                      cast(size_t) addr, len,
                      0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+/**
+ *  Client requests for callgrind.
+ */
+size_t dumpStats()
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS,
+                     0, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t dumpStatsAt(const void* posStr)
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS_AT,
+                     cast(size_t) posStr, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t zeroStats()
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.ZERO_STATS,
+                     0, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t toggleCollect()
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.TOGGLE_COLLECT,
+                     0, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t startInstrumentation()
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.START_INSTRUMENTATION,
+                     0, 0, 0, 0, 0];
+    return doClientRequest(0, arr);
+}
+
+
+size_t stopInstrumentation()
+{
+    size_t[6] arr = [Vg_CallgrindClientRequest.STOP_INSTRUMENTATION,
+                     0, 0, 0, 0, 0];
     return doClientRequest(0, arr);
 }
 
