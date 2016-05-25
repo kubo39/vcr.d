@@ -396,7 +396,7 @@ size_t doQuicLeakCheck()
 }
 
 
-private struct LeakCount
+struct LeakCount
 {
     size_t leaked;
     size_t dubious;
