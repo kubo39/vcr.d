@@ -1,6 +1,5 @@
 import vcr;
 
-import std.stdio;
 import core.stdc.stdlib : malloc, free;
 
 void main()
