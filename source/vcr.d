@@ -224,6 +224,10 @@ else static assert(false, "Unsupported arch.");
  *  Client requests for valgrind core.
  */
 
+/* Returns the number of Valgrinds this code is running under.  That
+   is, 0 if running natively, 1 if running under Valgrind, 2 if
+   running under Valgrind which is running under another Valgrind,
+   etc. */
 size_t runningOnValgrind()
 {
     size_t[6] arr = [Vg_ClientRequest.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
@@ -231,6 +235,20 @@ size_t runningOnValgrind()
 }
 
 
+/* Discard translation of code in the range [addr .. addr +
+   len - 1].  Useful if you are debugging a JITter or some such,
+   since it provides a way to make sure valgrind will retranslate the
+   invalidated area.  Returns no value. */
+void discardTranslation(const void* addr, size_t len)
+{
+    size_t[6] arr = [Vg_ClientRequest.DISCARD_TRANSLATIONS,
+                     cast(size_t) addr, len,
+                     0, 0, 0];
+    doClientRequest(0, arr);
+}
+
+
+/* Counts the number of errors that have been recorded by a tool. */
 size_t countErrors()
 {
     size_t[6] arr = [Vg_ClientRequest.COUNT_ERRORS, 0, 0, 0, 0, 0];
@@ -238,6 +256,9 @@ size_t countErrors()
 }
 
 
+/* Mark a piece of memory as being a stack. Returns a stack id.
+   start is the lowest addressable stack byte, end is the highest
+   addressable stack byte. */
 size_t stackRegister(const void* start, const void* end)
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_REGISTER,
@@ -248,6 +269,9 @@ size_t stackRegister(const void* start, const void* end)
 }
 
 
+/* Change the start and end address of the stack id.
+   start is the new lowest addressable stack byte, end is the new highest
+   addressable stack byte. */
 size_t stackChange(size_t id, const void* start, const void* end)
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_CHANGE,
@@ -259,6 +283,8 @@ size_t stackChange(size_t id, const void* start, const void* end)
 }
 
 
+/* Unmark the piece of memory associated with a stack id as being a
+   stack. */
 void stackDeregister(size_t id)
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_DEREGISTER,
@@ -268,18 +294,11 @@ void stackDeregister(size_t id)
 }
 
 
-size_t discardTranslation(const void* addr, size_t len)
-{
-    size_t[6] arr = [Vg_ClientRequest.DISCARD_TRANSLATIONS,
-                     cast(size_t) addr, len,
-                     0, 0, 0];
-    return doClientRequest(0, arr);
-}
-
-
 /**
  *  Client requests for callgrind.
  */
+
+/* Dump current state of cost centers, and zero them afterwards */
 size_t dumpStats()
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS,
@@ -288,6 +307,10 @@ size_t dumpStats()
 }
 
 
+/* Dump current state of cost centers, and zero them afterwards.
+   The argument is appended to a string stating the reason which triggered
+   the dump. This string is written as a description field into the
+   profile data dump. */
 size_t dumpStatsAt(const void* posStr)
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS_AT,
@@ -296,6 +319,7 @@ size_t dumpStatsAt(const void* posStr)
 }
 
 
+/* Zero cost centers */
 size_t zeroStats()
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.ZERO_STATS,
@@ -304,6 +328,10 @@ size_t zeroStats()
 }
 
 
+/* Toggles collection state.
+   The collection state specifies whether the happening of events
+   should be noted or if they are to be ignored. Events are noted
+   by increment of counters in a cost center */
 size_t toggleCollect()
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.TOGGLE_COLLECT,
@@ -312,6 +340,10 @@ size_t toggleCollect()
 }
 
 
+/* Start full callgrind instrumentation if not already switched on.
+   When cache simulation is done, it will flush the simulated cache;
+   this will lead to an artifical cache warmup phase afterwards with
+   cache misses which would not have happened in reality. */
 size_t startInstrumentation()
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.START_INSTRUMENTATION,
@@ -320,6 +352,13 @@ size_t startInstrumentation()
 }
 
 
+/* Stop full callgrind instrumentation if not already switched off.
+   This flushes Valgrinds translation cache, and does no additional
+   instrumentation afterwards, which effectivly will run at the same
+   speed as the "none" tool (ie. at minimal slowdown).
+   Use this to bypass Callgrind aggregation for uninteresting code parts.
+   To start Callgrind in this mode to ignore the setup phase, use
+   the option "--instr-atstart=no". */
 size_t stopInstrumentation()
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.STOP_INSTRUMENTATION,
@@ -332,6 +371,7 @@ size_t stopInstrumentation()
  *  Client requests for memcheck.
  */
 
+/* Mark memory at addr as unaddressable for len bytes. */
 size_t makeMemNoaccess(const void* addr, size_t len)
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_NOACCESS,
@@ -340,6 +380,8 @@ size_t makeMemNoaccess(const void* addr, size_t len)
 }
 
 
+/* Similarly, mark memory at addr as addressable but undefined
+   for len bytes. */
 size_t makeMemUndefined(const void* addr, size_t len)
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_UNDEFINED,
@@ -348,6 +390,8 @@ size_t makeMemUndefined(const void* addr, size_t len)
 }
 
 
+/* Similarly, mark memory at addr as addressable and defined
+   for len bytes. */
 size_t makeMemDefined(const void* addr, size_t len)
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_DEFINED,
@@ -356,6 +400,9 @@ size_t makeMemDefined(const void* addr, size_t len)
 }
 
 
+/* Similar to VALGRIND_MAKE_MEM_DEFINED except that addressability is
+   not altered: bytes which are addressable are marked as defined,
+   but those which are not addressable are left unchanged. */
 size_t makeMemDefinedIfAddressable(const void* addr, size_t len)
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_DEFINED_IF_ADDRESSABLE,
@@ -364,6 +411,7 @@ size_t makeMemDefinedIfAddressable(const void* addr, size_t len)
 }
 
 
+/* Do a full memory leak check (like --leak-check=full) mid-execution. */
 size_t doLeakCheck()
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
@@ -372,6 +420,9 @@ size_t doLeakCheck()
 }
 
 
+/* Same as VALGRIND_DO_LEAK_CHECK but only showing the entries for
+   which there was an increase in leaked bytes or leaked nr of blocks
+   since the previous leak search. */
 size_t doAddedLeakCheck()
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
@@ -380,6 +431,9 @@ size_t doAddedLeakCheck()
 }
 
 
+/* Same as VALGRIND_DO_ADDED_LEAK_CHECK but showing entries with
+   increased or decreased leaked bytes/blocks since previous leak
+   search. */
 size_t doChangedLeakCheck()
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
@@ -388,6 +442,7 @@ size_t doChangedLeakCheck()
 }
 
 
+/* Do a summary memory leak check (like --leak-check=summary) mid-execution. */
 size_t doQuicLeakCheck()
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
@@ -405,6 +460,8 @@ struct LeakCount
 }
 
 
+/* Return number of leaked, dubious, reachable and suppressed bytes found by
+   all previous leak checks.  They must be lvalues.  */
 LeakCount countLeaks()
 {
     auto counts = LeakCount(0, 0, 0, 0);
@@ -419,6 +476,8 @@ LeakCount countLeaks()
 }
 
 
+/* Return number of leaked, dubious, reachable and suppressed bytes found by
+   all previous leak checks.  They must be lvalues.  */
 LeakCount countLeakBlocks()
 {
     auto counts = LeakCount(0, 0, 0, 0);
