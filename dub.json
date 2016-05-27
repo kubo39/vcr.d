@@ -1,5 +1,5 @@
 {
-    "name": "vcr.d",
+    "name": "vcr",
     "description": "Valgrind cleint requests for D.",
     "authors": ["kubo39"],
     "targetType": "library",
