@@ -3,6 +3,6 @@
     "authors": ["kubo39"],
     "targetType": "executable",
     "dependencies": {
-        "vcr.d": {"version": "~master", "path": "../"}
+        "vcr": {"version": "~master", "path": "../"}
     }
 }
