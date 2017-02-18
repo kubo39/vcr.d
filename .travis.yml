@@ -8,4 +8,4 @@ install:
   - sudo apt-get install valgrind
 
 script:
-  - ${DC} -unittest -main -of./target/test source/vcr.d && valgrind --tool=none ./target/test
+  - valgrind --tool=none -q --trace-children=yes --log-file=/dev/null dub test --compiler=${DC}
