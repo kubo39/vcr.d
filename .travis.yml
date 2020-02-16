@@ -2,7 +2,7 @@ language: d
 
 d:
   - dmd
-  - ldc
+#  - ldc  # this causes valgrind internal error, and gets segmentation fault.
 
 install:
   - |
