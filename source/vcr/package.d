@@ -4,8 +4,7 @@
  */
 module vcr;
 
-
-private int vg_userreq_tool_base(char a, char b) pure @nogc
+private int vg_userreq_tool_base(ubyte a, ubyte b) pure @nogc nothrow
 {
     return (a & 0xff) << 24 | (b & 0xff) << 16;
 }
@@ -178,12 +177,12 @@ enum Vg_DRDClientRequest
 }
 
 
-version(D_InlineAsm_X86_64)
+size_t doClientRequest(size_t flag, ref size_t[6] args) @nogc nothrow
 {
-    size_t doClientRequest(size_t flag, ref size_t[6] args)
+    size_t result = void;
+    version(D_InlineAsm_X86_64)
     {
-        size_t result = void;
-        asm
+        asm @nogc nothrow
         {
             mov RDX, flag[RBP];
             mov RAX, args;
@@ -194,15 +193,10 @@ version(D_InlineAsm_X86_64)
             xchg RBX, RBX;
             mov result, RDX;
         }
-        return result;
     }
-}
-else version(D_InlineAsm_X86)
-{
-    size_t doClientRequest(size_t flag, ref size_t[6] args)
+    else version (D_InlineAsm_X86)
     {
-        size_t result = void;
-        asm
+        asm @nogc nothrow
         {
             mov EAX, args[EBP];
             mov EDX, flag;
@@ -213,11 +207,10 @@ else version(D_InlineAsm_X86)
             xchg EBX, EBX;
             mov result, EDX;
         }
-        return result;
     }
+    else static assert(false, "Unsupported architecture.");
+    return result;
 }
-else static assert(false, "Unsupported arch.");
-
 
 
 /**
@@ -228,7 +221,7 @@ else static assert(false, "Unsupported arch.");
    is, 0 if running natively, 1 if running under Valgrind, 2 if
    running under Valgrind which is running under another Valgrind,
    etc. */
-size_t runningOnValgrind()
+size_t runningOnValgrind() @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.RUNNING_ON_VALGRIND, 0, 0, 0, 0, 0];
     return doClientRequest(0, arr);
@@ -239,7 +232,7 @@ size_t runningOnValgrind()
    len - 1].  Useful if you are debugging a JITter or some such,
    since it provides a way to make sure valgrind will retranslate the
    invalidated area.  Returns no value. */
-void discardTranslation(const void* addr, size_t len)
+void discardTranslation(const void* addr, size_t len) @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.DISCARD_TRANSLATIONS,
                      cast(size_t) addr, len,
@@ -249,7 +242,7 @@ void discardTranslation(const void* addr, size_t len)
 
 
 /* Counts the number of errors that have been recorded by a tool. */
-size_t countErrors()
+size_t countErrors() @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.COUNT_ERRORS, 0, 0, 0, 0, 0];
     return doClientRequest(0, arr);
@@ -259,7 +252,7 @@ size_t countErrors()
 /* Mark a piece of memory as being a stack. Returns a stack id.
    start is the lowest addressable stack byte, end is the highest
    addressable stack byte. */
-size_t stackRegister(const void* start, const void* end)
+size_t stackRegister(const void* start, const void* end) @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_REGISTER,
                      cast(size_t) start,
@@ -272,7 +265,7 @@ size_t stackRegister(const void* start, const void* end)
 /* Change the start and end address of the stack id.
    start is the new lowest addressable stack byte, end is the new highest
    addressable stack byte. */
-size_t stackChange(size_t id, const void* start, const void* end)
+size_t stackChange(size_t id, const void* start, const void* end) @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_CHANGE,
                      id,
@@ -285,7 +278,7 @@ size_t stackChange(size_t id, const void* start, const void* end)
 
 /* Unmark the piece of memory associated with a stack id as being a
    stack. */
-void stackDeregister(size_t id)
+void stackDeregister(size_t id) @nogc nothrow
 {
     size_t[6] arr = [Vg_ClientRequest.STACK_DEREGISTER,
                      id,
@@ -299,7 +292,7 @@ void stackDeregister(size_t id)
  */
 
 /* Dump current state of cost centers, and zero them afterwards */
-size_t dumpStats()
+size_t dumpStats() @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS,
                      0, 0, 0, 0, 0];
@@ -311,7 +304,7 @@ size_t dumpStats()
    The argument is appended to a string stating the reason which triggered
    the dump. This string is written as a description field into the
    profile data dump. */
-size_t dumpStatsAt(const void* posStr)
+size_t dumpStatsAt(const void* posStr) @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.DUMP_STATS_AT,
                      cast(size_t) posStr, 0, 0, 0, 0];
@@ -320,7 +313,7 @@ size_t dumpStatsAt(const void* posStr)
 
 
 /* Zero cost centers */
-size_t zeroStats()
+size_t zeroStats() @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.ZERO_STATS,
                      0, 0, 0, 0, 0];
@@ -332,7 +325,7 @@ size_t zeroStats()
    The collection state specifies whether the happening of events
    should be noted or if they are to be ignored. Events are noted
    by increment of counters in a cost center */
-size_t toggleCollect()
+size_t toggleCollect() @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.TOGGLE_COLLECT,
                      0, 0, 0, 0, 0];
@@ -344,7 +337,7 @@ size_t toggleCollect()
    When cache simulation is done, it will flush the simulated cache;
    this will lead to an artifical cache warmup phase afterwards with
    cache misses which would not have happened in reality. */
-size_t startInstrumentation()
+size_t startInstrumentation() @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.START_INSTRUMENTATION,
                      0, 0, 0, 0, 0];
@@ -359,7 +352,7 @@ size_t startInstrumentation()
    Use this to bypass Callgrind aggregation for uninteresting code parts.
    To start Callgrind in this mode to ignore the setup phase, use
    the option "--instr-atstart=no". */
-size_t stopInstrumentation()
+size_t stopInstrumentation() @nogc nothrow
 {
     size_t[6] arr = [Vg_CallgrindClientRequest.STOP_INSTRUMENTATION,
                      0, 0, 0, 0, 0];
@@ -372,7 +365,7 @@ size_t stopInstrumentation()
  */
 
 /* Mark memory at addr as unaddressable for len bytes. */
-size_t makeMemNoaccess(const void* addr, size_t len)
+size_t makeMemNoaccess(const void* addr, size_t len) @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_NOACCESS,
                      cast(size_t) addr, len, 0, 0, 0];
@@ -382,7 +375,7 @@ size_t makeMemNoaccess(const void* addr, size_t len)
 
 /* Similarly, mark memory at addr as addressable but undefined
    for len bytes. */
-size_t makeMemUndefined(const void* addr, size_t len)
+size_t makeMemUndefined(const void* addr, size_t len) @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_UNDEFINED,
                      cast(size_t) addr, len, 0, 0, 0];
@@ -403,7 +396,7 @@ size_t makeMemDefined(const void* addr, size_t len)
 /* Similar to VALGRIND_MAKE_MEM_DEFINED except that addressability is
    not altered: bytes which are addressable are marked as defined,
    but those which are not addressable are left unchanged. */
-size_t makeMemDefinedIfAddressable(const void* addr, size_t len)
+size_t makeMemDefinedIfAddressable(const void* addr, size_t len) @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.MAKE_MEM_DEFINED_IF_ADDRESSABLE,
                      cast(size_t) addr, len, 0, 0, 0];
@@ -412,7 +405,7 @@ size_t makeMemDefinedIfAddressable(const void* addr, size_t len)
 
 
 /* Do a full memory leak check (like --leak-check=full) mid-execution. */
-size_t doLeakCheck()
+size_t doLeakCheck() @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
                      0, 0, 0, 0, 0];
@@ -423,7 +416,7 @@ size_t doLeakCheck()
 /* Same as VALGRIND_DO_LEAK_CHECK but only showing the entries for
    which there was an increase in leaked bytes or leaked nr of blocks
    since the previous leak search. */
-size_t doAddedLeakCheck()
+size_t doAddedLeakCheck() @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
                      0, 1, 0, 0, 0];
@@ -434,7 +427,7 @@ size_t doAddedLeakCheck()
 /* Same as VALGRIND_DO_ADDED_LEAK_CHECK but showing entries with
    increased or decreased leaked bytes/blocks since previous leak
    search. */
-size_t doChangedLeakCheck()
+size_t doChangedLeakCheck() @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
                      0, 2, 0, 0, 0];
@@ -443,7 +436,7 @@ size_t doChangedLeakCheck()
 
 
 /* Do a summary memory leak check (like --leak-check=summary) mid-execution. */
-size_t doQuicLeakCheck()
+size_t doQuicLeakCheck() @nogc nothrow
 {
     size_t[6] arr = [Vg_MemCheckClientRequest.DO_LEAK_CHECK,
                      1, 0, 0, 0, 0];
@@ -462,7 +455,7 @@ struct LeakCount
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by
    all previous leak checks.  They must be lvalues.  */
-LeakCount countLeaks()
+LeakCount countLeaks() @nogc nothrow
 {
     auto counts = LeakCount(0, 0, 0, 0);
     size_t[6] arr = [Vg_MemCheckClientRequest.COUNT_LEAKS,
@@ -478,7 +471,7 @@ LeakCount countLeaks()
 
 /* Return number of leaked, dubious, reachable and suppressed bytes found by
    all previous leak checks.  They must be lvalues.  */
-LeakCount countLeakBlocks()
+LeakCount countLeakBlocks() @nogc nothrow
 {
     auto counts = LeakCount(0, 0, 0, 0);
     size_t[6] arr = [Vg_MemCheckClientRequest.COUNT_LEAK_BLOCKS,
@@ -504,7 +497,7 @@ LeakCount countLeakBlocks()
    synchronisation, and (2) all other threads must sync with this one
    to access it safely.  This is particularly useful for memory
    allocators that wish to recycle memory. */
-size_t cleanMemory(const void* start, size_t len)
+size_t cleanMemory(const void* start, size_t len) @nogc nothrow
 {
     size_t[6] arr = [Vg_TCheckClientRequest.HG_CLEAN_MEMORY,
                      cast(size_t) start, len, 0, 0, 0];

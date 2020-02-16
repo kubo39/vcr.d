@@ -1,8 +1,7 @@
 {
     "name": "vcr",
     "description": "Valgrind cleint requests for D.",
-    "authors": ["kubo39"],
+    "authors": ["Hiroki Noda"],
     "targetType": "library",
-    "targetPath": "build",
     "license": "MIT"
 }

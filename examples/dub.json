@@ -1,6 +1,6 @@
 {
     "name": "example",
-    "authors": ["kubo39"],
+    "authors": ["Hiroki Noda"],
     "targetType": "executable",
     "dependencies": {
         "vcr": {"version": "~master", "path": "../"}
