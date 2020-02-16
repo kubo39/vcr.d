@@ -2,10 +2,12 @@ language: d
 
 d:
   - dmd
+  - ldc
 
 install:
-  - sudo apt-get update
-  - sudo apt-get install valgrind
+  - |
+    sudo apt-get -y update
+    sudo apt-get -y install valgrind
 
 script:
   - valgrind --tool=none -q --trace-children=yes --log-file=/dev/null dub test --compiler=${DC}
